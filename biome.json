@@ -1,19 +1,25 @@
 {
 	"$schema": "https://biomejs.dev/schemas/2.4.11/schema.json",
-	"css": {
-		"formatter": {
-			"enabled": true,
-			"indentStyle": "tab"
-		}
-	},
 	"files": {
-		"includes": ["**", "!coverage", "!**/node_modules", "!**/dist", "!src/templates", "!package.json", "!*.css", "!*.less"]
+		"includes": [
+			"**",
+			"!coverage",
+			"!package.json",
+			"!src/templates",
+			"!worker-configuration.d.ts",
+			"!**/.terraform",
+			"!**/.wrangler",
+			"!**/dist",
+			"!**/node_modules",
+			"!*.css",
+			"!*.less"
+		]
 	},
 	"formatter": {
 		"enabled": true,
 		"formatWithErrors": false,
 		"indentStyle": "tab",
-		"indentWidth": 2,
+		"indentWidth": 4,
 		"lineWidth": 130
 	},
 	"javascript": {
@@ -22,7 +28,8 @@
 			"quoteStyle": "single",
 			"semicolons": "always",
 			"trailingCommas": "all"
-		}
+		},
+		"jsxRuntime": "transparent"
 	},
 	"linter": {
 		"enabled": true,
