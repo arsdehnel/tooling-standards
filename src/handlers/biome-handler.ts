@@ -1,6 +1,7 @@
 import { fetchFile } from '../github/fetch.js';
 import { formatWithBiome } from '../utils/format.js';
 import { formatWithPrettier } from '../utils/format-prettier.js';
+import { detectPackageManager, generateLockfile } from '../utils/lockfile.js';
 import type { FileHandler, PushContext, PushResult } from './base-handler.js';
 
 export class BiomeHandler implements FileHandler {
@@ -71,15 +72,51 @@ export class BiomeHandler implements FileHandler {
 		const updatedPackageJsonRaw = JSON.stringify(pkg, null, 2) + '\n';
 		const updatedPackageJson = await formatWithPrettier(updatedPackageJsonRaw, 'package.json');
 
+		const additionalFiles: Array<{ path: string; content: string; reason: string }> = [
+			{
+				path: 'package.json',
+				content: updatedPackageJson,
+				reason: `Update @biomejs/biome to ${targetVersion} to match schema version`,
+			},
+		];
+
+		// Try to detect and update lockfile
+		const lockfileNames = ['pnpm-lock.yaml', 'package-lock.json', 'yarn.lock'];
+		let lockfileDetected = false;
+
+		for (const lockfileName of lockfileNames) {
+			try {
+				await fetchFile(context.owner, context.repo, lockfileName);
+				lockfileDetected = true;
+
+				const packageManager = detectPackageManager(lockfileName);
+				if (!packageManager) continue;
+
+				// Generate new lockfile with updated package.json
+				const newLockfile = await generateLockfile(updatedPackageJson, packageManager);
+
+				additionalFiles.push({
+					path: lockfileName,
+					content: newLockfile,
+					reason: 'Update lockfile to match package.json changes',
+				});
+
+				break; // Only update the first lockfile found
+			} catch (error) {}
+		}
+
+		if (!lockfileDetected) {
+			// Warn if no lockfile was found
+			return {
+				content: formatted,
+				additionalFiles,
+				warnings: ['No lockfile found - you may need to run your package manager after merging'],
+			};
+		}
+
 		return {
 			content: formatted,
-			additionalFiles: [
-				{
-					path: 'package.json',
-					content: updatedPackageJson,
-					reason: `Update @biomejs/biome to ${targetVersion} to match schema version`,
-				},
-			],
+			additionalFiles,
 		};
 	}
 }
