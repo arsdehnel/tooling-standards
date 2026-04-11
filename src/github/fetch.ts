@@ -1,6 +1,13 @@
 import { Octokit } from '@octokit/rest';
 
-export async function fetchFile(owner, repo, path, ref = 'main') {
+export interface FetchedFile {
+	content: string;
+	sha: string;
+	path: string;
+	size: number;
+}
+
+export async function fetchFile(owner: string, repo: string, path: string, ref = 'main'): Promise<FetchedFile> {
 	const octokit = new Octokit({
 		auth: process.env.GH_TOKEN_TOOLING_STANDARDS,
 		baseUrl: 'https://api.github.com',
@@ -10,7 +17,7 @@ export async function fetchFile(owner, repo, path, ref = 'main') {
 	try {
 		await octokit.rest.repos.get({ owner, repo });
 	} catch (error) {
-		if (error.status === 404) {
+		if ((error as { status?: number }).status === 404) {
 			throw new Error(`Repository not found: ${owner}/${repo}`);
 		}
 		throw error;
@@ -24,7 +31,7 @@ export async function fetchFile(owner, repo, path, ref = 'main') {
 			ref,
 		});
 
-		if (data.type !== 'file') {
+		if (!('content' in data) || data.type !== 'file') {
 			throw new Error(`${path} is not a file`);
 		}
 
@@ -38,7 +45,7 @@ export async function fetchFile(owner, repo, path, ref = 'main') {
 			size: data.size,
 		};
 	} catch (error) {
-		if (error.status === 404) {
+		if ((error as { status?: number }).status === 404) {
 			throw new Error(`File not found: ${path} in ${owner}/${repo}`);
 		}
 		throw error;

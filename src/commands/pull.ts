@@ -1,5 +1,6 @@
 import { confirm, select } from '@inquirer/prompts';
 import chalk from 'chalk';
+import type { Argv } from 'yargs';
 import { fetchFile } from '../github/fetch.js';
 import { applySelectedHunks, formatDiff, formatHunk, generateDiff, parseHunks } from '../utils/diff.js';
 import { readTemplate, saveTemplate, templateExists } from '../utils/file-ops.js';
@@ -9,7 +10,15 @@ import { isJsonFile, normalizeJson } from '../utils/json-normalize.js';
 export const command = 'pull <file>';
 export const describe = 'Pull a config file from a GitHub repository';
 
-export const builder = yargs => {
+interface PullArgs {
+	file: string;
+	owner: string;
+	repo: string;
+	branch: string;
+	save: boolean;
+}
+
+export const builder = (yargs: Argv) => {
 	return yargs
 		.positional('file', {
 			describe: 'Config file to pull (e.g., biome.json, tsconfig.json)',
@@ -41,7 +50,7 @@ export const builder = yargs => {
 		});
 };
 
-export const handler = async argv => {
+export const handler = async (argv: PullArgs): Promise<void> => {
 	const { file, owner, repo, branch, save } = argv;
 
 	try {
@@ -58,7 +67,12 @@ export const handler = async argv => {
 		let contentToSave = fetched.content;
 
 		if (exists) {
-			let currentContent = await readTemplate(file);
+			const currentContentRaw = await readTemplate(file);
+			if (!currentContentRaw) {
+				throw new Error(`Template file exists but could not be read: ${file}`);
+			}
+
+			let currentContent = currentContentRaw;
 			let newContent = fetched.content;
 
 			// Normalize JSON files for cleaner diffs
@@ -197,7 +211,9 @@ export const handler = async argv => {
 					}
 
 					console.log(
-						chalk.green(`\n✓ Applying ${selectedIndexes.length} of ${hunks.length} change${hunks.length > 1 ? 's' : ''}`),
+						chalk.green(
+							`\n✓ Applying ${selectedIndexes.length} of ${hunks.length} change${hunks.length > 1 ? 's' : ''}`,
+						),
 					);
 					contentToSave = applySelectedHunks(currentContent, diff, selectedIndexes);
 				}
@@ -226,7 +242,7 @@ export const handler = async argv => {
 		const savedPath = await saveTemplate(file, contentToSave);
 		console.log(chalk.green(`💾 Saved to ${chalk.bold(savedPath)}`));
 	} catch (error) {
-		if (error.message.includes('Repository not found')) {
+		if (error instanceof Error && error.message.includes('Repository not found')) {
 			console.error(chalk.red(`\n❌ Repository ${chalk.bold(`${owner}/${repo}`)} not found`));
 			console.log(chalk.dim('\n💡 Check that:'));
 			console.log(chalk.dim('   - The repository name is spelled correctly'));
@@ -235,14 +251,15 @@ export const handler = async argv => {
 			process.exit(1);
 		}
 
-		if (error.message.includes('File not found')) {
+		if (error instanceof Error && error.message.includes('File not found')) {
 			console.error(chalk.red(`\n❌ ${chalk.bold(file)} does not exist in ${chalk.bold(`${owner}/${repo}`)}`));
 			console.log(chalk.dim('\n💡 This file is not in the target repository.'));
 			console.log(chalk.dim('   To add your standard config to this repo, you can use the push command (coming soon).'));
 			process.exit(0);
 		}
 
-		console.error(chalk.red(`\n⚠️  Error: ${error.message}`));
+		const errorMessage = error instanceof Error ? error.message : String(error);
+		console.error(chalk.red(`\n⚠️  Error: ${errorMessage}`));
 		process.exit(1);
 	}
 };

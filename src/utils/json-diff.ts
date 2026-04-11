@@ -1,7 +1,31 @@
 import chalk from 'chalk';
 
-export function compareJsonByProperty(oldContent, newContent) {
-	let oldJson, newJson;
+type JsonValue = string | number | boolean | null | { [key: string]: JsonValue } | JsonValue[];
+
+interface PropertyChangeAdded {
+	type: 'added';
+	key: string;
+	newValue: JsonValue;
+}
+
+interface PropertyChangeRemoved {
+	type: 'removed';
+	key: string;
+	oldValue: JsonValue;
+}
+
+interface PropertyChangeModified {
+	type: 'modified';
+	key: string;
+	oldValue: JsonValue;
+	newValue: JsonValue;
+}
+
+export type PropertyChange = PropertyChangeAdded | PropertyChangeRemoved | PropertyChangeModified;
+
+export function compareJsonByProperty(oldContent: string, newContent: string): PropertyChange[] | null {
+	let oldJson: JsonValue;
+	let newJson: JsonValue;
 
 	try {
 		oldJson = JSON.parse(oldContent);
@@ -10,9 +34,9 @@ export function compareJsonByProperty(oldContent, newContent) {
 		return null; // Not valid JSON
 	}
 
-	const changes = [];
-	const oldKeys = new Set(Object.keys(oldJson));
-	const newKeys = new Set(Object.keys(newJson));
+	const changes: PropertyChange[] = [];
+	const oldKeys = new Set(Object.keys(oldJson as Record<string, JsonValue>));
+	const newKeys = new Set(Object.keys(newJson as Record<string, JsonValue>));
 	const allKeys = new Set([...oldKeys, ...newKeys]);
 
 	for (const key of allKeys) {
@@ -48,8 +72,8 @@ export function compareJsonByProperty(oldContent, newContent) {
 	return changes;
 }
 
-export function formatJsonPropertyChange(change) {
-	const lines = [];
+export function formatJsonPropertyChange(change: PropertyChange): string {
+	const lines: string[] = [];
 
 	if (change.type === 'added') {
 		lines.push(chalk.green(`+ Add property: ${chalk.bold(change.key)}`));
@@ -74,9 +98,9 @@ export function formatJsonPropertyChange(change) {
 	return lines.join('\n');
 }
 
-export function applyJsonPropertyChanges(oldContent, selectedChanges) {
-	const oldJson = JSON.parse(oldContent);
-	const result = { ...oldJson };
+export function applyJsonPropertyChanges(oldContent: string, selectedChanges: PropertyChange[]): string {
+	const oldJson = JSON.parse(oldContent) as Record<string, JsonValue>;
+	const result: Record<string, JsonValue> = { ...oldJson };
 
 	for (const change of selectedChanges) {
 		if (change.type === 'added' || change.type === 'modified') {

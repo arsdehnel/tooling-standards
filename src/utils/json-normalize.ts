@@ -1,13 +1,17 @@
-export function isJsonFile(filename) {
+type JsonValue = string | number | boolean | null | JsonObject | JsonArray;
+type JsonObject = { [key: string]: JsonValue };
+type JsonArray = JsonValue[];
+
+export function isJsonFile(filename: string): boolean {
 	return filename.endsWith('.json');
 }
 
-export function sortJsonKeys(obj) {
+export function sortJsonKeys(obj: JsonValue): JsonValue {
 	if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) {
 		return obj;
 	}
 
-	const sorted = {};
+	const sorted: JsonObject = {};
 	const keys = Object.keys(obj).sort();
 
 	for (const key of keys) {
@@ -17,9 +21,9 @@ export function sortJsonKeys(obj) {
 	return sorted;
 }
 
-export function normalizeJson(content) {
+export function normalizeJson(content: string): string {
 	try {
-		const parsed = JSON.parse(content);
+		const parsed: JsonValue = JSON.parse(content);
 		const sorted = sortJsonKeys(parsed);
 		return JSON.stringify(sorted, null, 2);
 	} catch (_error) {

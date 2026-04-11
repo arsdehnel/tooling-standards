@@ -1,7 +1,17 @@
 import chalk from 'chalk';
 import { applyPatch, createTwoFilesPatch, parsePatch } from 'diff';
 
-export function generateDiff(oldContent, newContent, filename) {
+export interface Hunk {
+	index: number;
+	header: string;
+	lines: string[];
+	oldStart: number;
+	oldLines: number;
+	newStart: number;
+	newLines: number;
+}
+
+export function generateDiff(oldContent: string, newContent: string, filename: string): string {
 	const patch = createTwoFilesPatch(
 		`a/${filename}`,
 		`b/${filename}`,
@@ -14,7 +24,7 @@ export function generateDiff(oldContent, newContent, filename) {
 	return patch;
 }
 
-export function formatDiff(diff) {
+export function formatDiff(diff: string): string {
 	const lines = diff.split('\n');
 	return lines
 		.map(line => {
@@ -32,26 +42,28 @@ export function formatDiff(diff) {
 		.join('\n');
 }
 
-export function parseHunks(patchText) {
+export function parseHunks(patchText: string): Hunk[] {
 	const parsed = parsePatch(patchText);
 	if (!parsed || parsed.length === 0) {
 		return [];
 	}
 
 	const file = parsed[0];
-	return file.hunks.map((hunk, index) => ({
-		index,
-		header: `@@ -${hunk.oldStart},${hunk.oldLines} +${hunk.newStart},${hunk.newLines} @@`,
-		lines: hunk.lines,
-		oldStart: hunk.oldStart,
-		oldLines: hunk.oldLines,
-		newStart: hunk.newStart,
-		newLines: hunk.newLines,
-	}));
+	return file.hunks.map(
+		(hunk, index): Hunk => ({
+			index,
+			header: `@@ -${hunk.oldStart},${hunk.oldLines} +${hunk.newStart},${hunk.newLines} @@`,
+			lines: hunk.lines,
+			oldStart: hunk.oldStart,
+			oldLines: hunk.oldLines,
+			newStart: hunk.newStart,
+			newLines: hunk.newLines,
+		}),
+	);
 }
 
-export function formatHunk(hunk) {
-	const lines = [chalk.cyan(hunk.header)];
+export function formatHunk(hunk: Hunk): string {
+	const lines: string[] = [chalk.cyan(hunk.header)];
 
 	for (const line of hunk.lines) {
 		if (line.startsWith('+')) {
@@ -66,7 +78,7 @@ export function formatHunk(hunk) {
 	return lines.join('\n');
 }
 
-export function applySelectedHunks(oldContent, patchText, selectedIndexes) {
+export function applySelectedHunks(oldContent: string, patchText: string, selectedIndexes: number[]): string {
 	const parsed = parsePatch(patchText);
 	if (!parsed || parsed.length === 0) {
 		return oldContent;

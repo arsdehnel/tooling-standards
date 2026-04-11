@@ -1,15 +1,32 @@
 {
 	"compilerOptions": {
+		/* Language & Environment */
 		"target": "ES2022",
+		"lib": ["ES2022"],
+		"types": ["node"],
+
+		/* Modules */
 		"module": "ESNext",
-		"moduleResolution": "node",
-		"esModuleInterop": true,
-		"skipLibCheck": true,
+		"moduleResolution": "bundler",
+
+		/* Type Checking */
 		"strict": true,
+		"skipLibCheck": true,
 		"forceConsistentCasingInFileNames": true,
+
+		/* Interop Constraints */
+		"esModuleInterop": true,
+		"allowSyntheticDefaultImports": true,
+		"isolatedModules": true,
 		"resolveJsonModule": true,
-		"outDir": "./dist",
-		"rootDir": "./src"
+
+		/* Emit */
+		"noEmit": true,
+		"checkJs": false,
+
+		/* Paths (used for IDE) */
+		"rootDir": "./src",
+		"outDir": "./dist"
 	},
 	"include": ["src/**/*"],
 	"exclude": ["node_modules", "dist"]
