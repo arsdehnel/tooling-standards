@@ -28,7 +28,7 @@ export const builder = (yargs: Argv) => {
 			alias: 'o',
 			describe: 'GitHub repository owner',
 			type: 'string',
-			default: 'arsdehnel',
+			demandOption: true,
 		})
 		.option('repo', {
 			alias: 'r',
@@ -254,7 +254,9 @@ export const handler = async (argv: PullArgs): Promise<void> => {
 		if (error instanceof Error && error.message.includes('File not found')) {
 			console.error(chalk.red(`\n❌ ${chalk.bold(file)} does not exist in ${chalk.bold(`${owner}/${repo}`)}`));
 			console.log(chalk.dim('\n💡 This file is not in the target repository.'));
-			console.log(chalk.dim('   To add your standard config to this repo, you can use the push command (coming soon).'));
+			console.log(
+				chalk.dim(`   To add your standard config to this repo, try: tooling push ${file} -o ${owner} -r ${repo}`),
+			);
 			process.exit(0);
 		}
 

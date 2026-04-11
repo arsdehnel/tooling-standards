@@ -24,19 +24,34 @@ interface PropertyChangeModified {
 export type PropertyChange = PropertyChangeAdded | PropertyChangeRemoved | PropertyChangeModified;
 
 export function compareJsonByProperty(oldContent: string, newContent: string): PropertyChange[] | null {
-	let oldJson: JsonValue;
-	let newJson: JsonValue;
+	let oldJsonRaw: JsonValue;
+	let newJsonRaw: JsonValue;
 
 	try {
-		oldJson = JSON.parse(oldContent);
-		newJson = JSON.parse(newContent);
+		oldJsonRaw = JSON.parse(oldContent);
+		newJsonRaw = JSON.parse(newContent);
 	} catch (_error) {
 		return null; // Not valid JSON
 	}
 
+	// Ensure we're comparing objects, not primitives or arrays
+	if (
+		typeof oldJsonRaw !== 'object' ||
+		oldJsonRaw === null ||
+		Array.isArray(oldJsonRaw) ||
+		typeof newJsonRaw !== 'object' ||
+		newJsonRaw === null ||
+		Array.isArray(newJsonRaw)
+	) {
+		return null;
+	}
+
+	const oldJson = oldJsonRaw as Record<string, JsonValue>;
+	const newJson = newJsonRaw as Record<string, JsonValue>;
+
 	const changes: PropertyChange[] = [];
-	const oldKeys = new Set(Object.keys(oldJson as Record<string, JsonValue>));
-	const newKeys = new Set(Object.keys(newJson as Record<string, JsonValue>));
+	const oldKeys = new Set(Object.keys(oldJson));
+	const newKeys = new Set(Object.keys(newJson));
 	const allKeys = new Set([...oldKeys, ...newKeys]);
 
 	for (const key of allKeys) {
