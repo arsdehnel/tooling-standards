@@ -1,0 +1,32 @@
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export const TEMPLATES_DIR = path.join(__dirname, '../templates');
+
+export async function saveTemplate(filename, content) {
+	const filepath = path.join(TEMPLATES_DIR, filename);
+	await fs.writeFile(filepath, content, 'utf-8');
+	return filepath;
+}
+
+export async function readTemplate(filename) {
+	const filepath = path.join(TEMPLATES_DIR, filename);
+	try {
+		const content = await fs.readFile(filepath, 'utf-8');
+		return content;
+	} catch (error) {
+		if (error.code === 'ENOENT') {
+			return null;
+		}
+		throw error;
+	}
+}
+
+export async function templateExists(filename) {
+	const content = await readTemplate(filename);
+	return content !== null;
+}
