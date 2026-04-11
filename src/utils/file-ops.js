@@ -9,6 +9,7 @@ export const TEMPLATES_DIR = path.join(__dirname, '../templates');
 
 export async function saveTemplate(filename, content) {
 	const filepath = path.join(TEMPLATES_DIR, filename);
+	await fs.mkdir(path.dirname(filepath), { recursive: true });
 	await fs.writeFile(filepath, content, 'utf-8');
 	return filepath;
 }
