@@ -7,7 +7,7 @@
 		}
 	},
 	"files": {
-		"includes": ["**", "!coverage", "!**/node_modules", "!**/dist", "!src/templates"]
+		"includes": ["**", "!coverage", "!**/node_modules", "!**/dist", "!src/templates", "!package.json", "!*.css", "!*.less"]
 	},
 	"formatter": {
 		"enabled": true,
