@@ -165,7 +165,7 @@ export const handler = async (argv: PushArgs): Promise<void> => {
 				const changes = compareJsonByProperty(normalizedRemote, normalizedNew);
 				if (changes && changes.length > 0) {
 					for (const change of changes) {
-						console.log(formatJsonPropertyChange(change));
+						console.log(formatJsonPropertyChange(change, 'push'));
 						console.log('');
 					}
 				}

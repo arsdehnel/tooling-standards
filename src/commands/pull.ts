@@ -102,7 +102,7 @@ export const handler = async (argv: PullArgs): Promise<void> => {
 				if (save) {
 					// Auto-save: accept all changes
 					for (const change of propertyChanges) {
-						console.log(formatJsonPropertyChange(change));
+						console.log(formatJsonPropertyChange(change, 'pull'));
 						console.log('');
 					}
 					contentToSave = newContent;
@@ -113,16 +113,16 @@ export const handler = async (argv: PullArgs): Promise<void> => {
 					for (let i = 0; i < propertyChanges.length; i++) {
 						const change = propertyChanges[i];
 						console.log(chalk.bold(`\n--- Property ${i + 1} of ${propertyChanges.length} ---`));
-						console.log(formatJsonPropertyChange(change));
+						console.log(formatJsonPropertyChange(change, 'pull'));
 						console.log('');
 
 						const action = await select({
 							message: 'What would you like to do?',
 							choices: [
-								{ name: '⊗ Keep current template (skip this change)', value: 'no' },
-								{ name: '✓ Use new value (accept this change)', value: 'yes' },
-								{ name: '⊗⊗ Keep current for all remaining', value: 'none' },
-								{ name: '✓✓ Use new for all remaining', value: 'all' },
+								{ name: '⊗ Keep template (skip this change)', value: 'no' },
+								{ name: '✓ Use fetched value (accept this change)', value: 'yes' },
+								{ name: '⊗⊗ Keep template for all remaining', value: 'none' },
+								{ name: '✓✓ Use fetched for all remaining', value: 'all' },
 							],
 						});
 
@@ -183,10 +183,10 @@ export const handler = async (argv: PullArgs): Promise<void> => {
 						const action = await select({
 							message: 'What would you like to do?',
 							choices: [
-								{ name: '⊗ Keep current template (skip this change)', value: 'no' },
-								{ name: '✓ Use new value (accept this change)', value: 'yes' },
-								{ name: '⊗⊗ Keep current for all remaining', value: 'none' },
-								{ name: '✓✓ Use new for all remaining', value: 'all' },
+								{ name: '⊗ Keep template (skip this change)', value: 'no' },
+								{ name: '✓ Use fetched value (accept this change)', value: 'yes' },
+								{ name: '⊗⊗ Keep template for all remaining', value: 'none' },
+								{ name: '✓✓ Use fetched for all remaining', value: 'all' },
 							],
 						});
 

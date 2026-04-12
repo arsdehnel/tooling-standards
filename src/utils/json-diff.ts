@@ -87,26 +87,31 @@ export function compareJsonByProperty(oldContent: string, newContent: string): P
 	return changes;
 }
 
-export function formatJsonPropertyChange(change: PropertyChange): string {
+export function formatJsonPropertyChange(change: PropertyChange, context: 'pull' | 'push' = 'push'): string {
 	const lines: string[] = [];
+
+	// For pull: old=template, new=fetched
+	// For push: old=existing, new=template
+	const oldLabel = context === 'pull' ? 'Template' : 'Existing';
+	const newLabel = context === 'pull' ? 'Fetched' : 'Template';
 
 	if (change.type === 'added') {
 		lines.push(chalk.green(`+ Add property: ${chalk.bold(change.key)}`));
 		lines.push(chalk.dim(''));
-		lines.push(chalk.green('+ New value:'));
+		lines.push(chalk.green(`+ ${newLabel}:`));
 		lines.push(chalk.green(JSON.stringify({ [change.key]: change.newValue }, null, 2)));
 	} else if (change.type === 'removed') {
 		lines.push(chalk.red(`- Remove property: ${chalk.bold(change.key)}`));
 		lines.push(chalk.dim(''));
-		lines.push(chalk.red('- Current value:'));
+		lines.push(chalk.red(`- ${oldLabel}:`));
 		lines.push(chalk.red(JSON.stringify({ [change.key]: change.oldValue }, null, 2)));
 	} else if (change.type === 'modified') {
 		lines.push(chalk.yellow(`~ Modify property: ${chalk.bold(change.key)}`));
 		lines.push(chalk.dim(''));
-		lines.push(chalk.red('- Current:'));
+		lines.push(chalk.red(`- ${oldLabel}:`));
 		lines.push(chalk.red(JSON.stringify({ [change.key]: change.oldValue }, null, 2)));
 		lines.push(chalk.dim(''));
-		lines.push(chalk.green('+ New:'));
+		lines.push(chalk.green(`+ ${newLabel}:`));
 		lines.push(chalk.green(JSON.stringify({ [change.key]: change.newValue }, null, 2)));
 	}
 
