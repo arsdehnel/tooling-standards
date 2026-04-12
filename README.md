@@ -80,6 +80,57 @@ pnpm dev push biome.json -o arsdehnel -r my-app -b custom-branch-name
 - Handles existing PRs (updates open PRs, recreates closed/merged PRs)
 - File-specific handlers for smart updates (see below)
 
+### `scan` - Scan repositories for compliance
+
+Scans configured repositories to check compliance with a template file.
+
+```bash
+pnpm dev scan <file> [-r <repo>...]
+
+# Examples
+pnpm dev scan biome.json                          # Scan all configured repos
+pnpm dev scan tsconfig.json -r arsdehnel/my-app   # Scan specific repo
+pnpm dev scan biome.json -r repo1 -r repo2        # Scan multiple repos
+```
+
+**Options:**
+- `<file>` - Template file to scan for (e.g., `biome.json`, `tsconfig.json`)
+- `-r, --repo` - Scan specific repository(ies) instead of all configured (optional)
+
+**Configuration:**
+
+Create a `tooling-standards.yaml` file in the project root:
+
+```yaml
+repositories:
+  - arsdehnel/my-project
+  - arsdehnel/another-project
+  - kad-products/rezept-core
+```
+
+See `tooling-standards.yaml.example` for a template.
+
+**Output:**
+
+```
+🔍 Scanning 5 repositories for biome.json...
+
+Repository                    Status       Differences
+────────────────────────────────────────────────────────────
+✓ arsdehnel/my-project         Compliant    None
+~ arsdehnel/other-project      Differs      2 changes
+~ kad-products/rezept-core     Differs      1 change
+✗ arsdehnel/old-project        Missing      File not found
+
+Summary: 1 compliant, 2 need updates, 1 missing
+```
+
+**Features:**
+- Scans all configured repositories at once
+- Shows compliance status and difference counts
+- Use `pull` command to see detailed differences
+- Use `push` command to apply updates to non-compliant repos
+
 ## Supported File Types
 
 ### Standard Files

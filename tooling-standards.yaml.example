@@ -1,0 +1,8 @@
+# Tooling Standards Configuration
+# List all repositories you want to manage with this tool
+
+repositories:
+  - arsdehnel/my-project
+  - arsdehnel/another-project
+  - kad-products/rezept-core
+  # Add more repositories in owner/repo format

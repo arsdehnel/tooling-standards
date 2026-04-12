@@ -11,6 +11,9 @@ coverage/
 .env
 .env.local
 
+# Config file (keep example, ignore actual)
+tooling-standards.yaml
+
 # OS files
 .DS_Store
 Thumbs.db
