@@ -93,20 +93,20 @@ export function formatJsonPropertyChange(change: PropertyChange): string {
 	if (change.type === 'added') {
 		lines.push(chalk.green(`+ Add property: ${chalk.bold(change.key)}`));
 		lines.push(chalk.dim(''));
-		lines.push(chalk.green('+ Remote:'));
+		lines.push(chalk.green('+ New value:'));
 		lines.push(chalk.green(JSON.stringify({ [change.key]: change.newValue }, null, 2)));
 	} else if (change.type === 'removed') {
 		lines.push(chalk.red(`- Remove property: ${chalk.bold(change.key)}`));
 		lines.push(chalk.dim(''));
-		lines.push(chalk.red('- Local:'));
+		lines.push(chalk.red('- Current value:'));
 		lines.push(chalk.red(JSON.stringify({ [change.key]: change.oldValue }, null, 2)));
 	} else if (change.type === 'modified') {
 		lines.push(chalk.yellow(`~ Modify property: ${chalk.bold(change.key)}`));
 		lines.push(chalk.dim(''));
-		lines.push(chalk.red('- Local:'));
+		lines.push(chalk.red('- Current:'));
 		lines.push(chalk.red(JSON.stringify({ [change.key]: change.oldValue }, null, 2)));
 		lines.push(chalk.dim(''));
-		lines.push(chalk.green('+ Remote:'));
+		lines.push(chalk.green('+ New:'));
 		lines.push(chalk.green(JSON.stringify({ [change.key]: change.newValue }, null, 2)));
 	}
 

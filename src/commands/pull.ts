@@ -119,10 +119,10 @@ export const handler = async (argv: PullArgs): Promise<void> => {
 						const action = await select({
 							message: 'What would you like to do?',
 							choices: [
-								{ name: '⊗ Keep local (skip this change)', value: 'no' },
-								{ name: '✓ Use remote (accept this change)', value: 'yes' },
-								{ name: '⊗⊗ Keep local for all remaining', value: 'none' },
-								{ name: '✓✓ Use remote for all remaining', value: 'all' },
+								{ name: '⊗ Keep current template (skip this change)', value: 'no' },
+								{ name: '✓ Use new value (accept this change)', value: 'yes' },
+								{ name: '⊗⊗ Keep current for all remaining', value: 'none' },
+								{ name: '✓✓ Use new for all remaining', value: 'all' },
 							],
 						});
 
@@ -183,10 +183,10 @@ export const handler = async (argv: PullArgs): Promise<void> => {
 						const action = await select({
 							message: 'What would you like to do?',
 							choices: [
-								{ name: '⊗ Keep local (skip this change)', value: 'no' },
-								{ name: '✓ Use remote (accept this change)', value: 'yes' },
-								{ name: '⊗⊗ Keep local for all remaining', value: 'none' },
-								{ name: '✓✓ Use remote for all remaining', value: 'all' },
+								{ name: '⊗ Keep current template (skip this change)', value: 'no' },
+								{ name: '✓ Use new value (accept this change)', value: 'yes' },
+								{ name: '⊗⊗ Keep current for all remaining', value: 'none' },
+								{ name: '✓✓ Use new for all remaining', value: 'all' },
 							],
 						});
 
