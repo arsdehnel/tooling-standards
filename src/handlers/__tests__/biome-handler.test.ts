@@ -196,7 +196,9 @@ describe('BiomeHandler', () => {
 		vi.mocked(formatWithBiome).mockResolvedValue('{"$schema": "https://biomejs.dev/schemas/2.4.11/schema.json"}');
 		vi.mocked(formatWithPrettier).mockImplementation(content => Promise.resolve(content));
 		vi.mocked(detectPackageManager).mockReturnValue('pnpm');
-		vi.mocked(generateLockfile).mockResolvedValue('lockfileVersion: 9.0\n# mock lockfile content');
+		vi.mocked(generateLockfile).mockResolvedValue('lockfileVersion: 9.0\n# updated lockfile content');
+
+		const existingLockfileContent = 'lockfileVersion: 9.0\nold content';
 
 		// Mock fetchFile to return package.json first, then pnpm-lock.yaml
 		vi.mocked(fetchFile).mockImplementation(async (owner, repo, path) => {
@@ -214,7 +216,7 @@ describe('BiomeHandler', () => {
 			}
 			if (path === 'pnpm-lock.yaml') {
 				return {
-					content: 'lockfileVersion: 9.0\nold content',
+					content: existingLockfileContent,
 					sha: 'sha',
 					path: 'pnpm-lock.yaml',
 					size: 50,
@@ -234,7 +236,14 @@ describe('BiomeHandler', () => {
 		expect(result.additionalFiles![0].path).toBe('package.json');
 		expect(result.additionalFiles![1].path).toBe('pnpm-lock.yaml');
 		expect(result.additionalFiles![1].reason).toBe('Update lockfile to match package.json changes');
-		expect(result.additionalFiles![1].content).toBe('lockfileVersion: 9.0\n# mock lockfile content');
+		expect(result.additionalFiles![1].content).toBe('lockfileVersion: 9.0\n# updated lockfile content');
+
+		// Verify generateLockfile was called with existing lockfile
+		expect(generateLockfile).toHaveBeenCalledWith(
+			expect.any(String), // updatedPackageJson
+			'pnpm',
+			existingLockfileContent, // ← Existing lockfile passed!
+		);
 	});
 
 	it('should update npm lockfile when updating package.json', async () => {
@@ -247,6 +256,8 @@ describe('BiomeHandler', () => {
 		vi.mocked(formatWithPrettier).mockImplementation(content => Promise.resolve(content));
 		vi.mocked(detectPackageManager).mockReturnValue('npm');
 		vi.mocked(generateLockfile).mockResolvedValue('{"lockfileVersion": 3}');
+
+		const existingNpmLockfile = '{"lockfileVersion": 2}';
 
 		vi.mocked(fetchFile).mockImplementation(async (owner, repo, path) => {
 			if (path === 'package.json') {
@@ -266,7 +277,7 @@ describe('BiomeHandler', () => {
 			}
 			if (path === 'package-lock.json') {
 				return {
-					content: '{"lockfileVersion": 2}',
+					content: existingNpmLockfile,
 					sha: 'sha',
 					path: 'package-lock.json',
 					size: 50,
@@ -284,6 +295,9 @@ describe('BiomeHandler', () => {
 
 		expect(result.additionalFiles).toHaveLength(2);
 		expect(result.additionalFiles![1].path).toBe('package-lock.json');
+
+		// Verify generateLockfile was called with existing lockfile
+		expect(generateLockfile).toHaveBeenCalledWith(expect.any(String), 'npm', existingNpmLockfile);
 	});
 
 	it('should warn when no lockfile is found', async () => {

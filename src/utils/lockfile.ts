@@ -18,7 +18,11 @@ export function detectPackageManager(lockfileName: string): PackageManager | nul
 /**
  * Generate a lockfile for the given package.json content
  */
-export async function generateLockfile(packageJsonContent: string, packageManager: PackageManager): Promise<string> {
+export async function generateLockfile(
+	packageJsonContent: string,
+	packageManager: PackageManager,
+	existingLockfile?: string,
+): Promise<string> {
 	// Create temporary directory
 	const tempDir = await mkdtemp(join(tmpdir(), 'tooling-standards-'));
 
@@ -27,11 +31,17 @@ export async function generateLockfile(packageJsonContent: string, packageManage
 		const packageJsonPath = join(tempDir, 'package.json');
 		await writeFile(packageJsonPath, packageJsonContent, 'utf-8');
 
-		// Run package manager to generate lockfile
+		// Write existing lockfile if provided (allows incremental update)
 		const lockfileName = getLockfileName(packageManager);
+		if (existingLockfile) {
+			const lockfilePath = join(tempDir, lockfileName);
+			await writeFile(lockfilePath, existingLockfile, 'utf-8');
+		}
+
+		// Run package manager to update lockfile
 		await runPackageManagerInstall(packageManager, tempDir);
 
-		// Read generated lockfile
+		// Read updated lockfile
 		const lockfilePath = join(tempDir, lockfileName);
 		const lockfileContent = await readFile(lockfilePath, 'utf-8');
 

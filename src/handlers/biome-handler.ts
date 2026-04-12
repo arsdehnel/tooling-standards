@@ -86,14 +86,14 @@ export class BiomeHandler implements FileHandler {
 
 		for (const lockfileName of lockfileNames) {
 			try {
-				await fetchFile(context.owner, context.repo, lockfileName);
+				const existingLockfile = await fetchFile(context.owner, context.repo, lockfileName);
 				lockfileDetected = true;
 
 				const packageManager = detectPackageManager(lockfileName);
 				if (!packageManager) continue;
 
-				// Generate new lockfile with updated package.json
-				const newLockfile = await generateLockfile(updatedPackageJson, packageManager);
+				// Update lockfile incrementally with existing lockfile as base
+				const newLockfile = await generateLockfile(updatedPackageJson, packageManager, existingLockfile.content);
 
 				additionalFiles.push({
 					path: lockfileName,
