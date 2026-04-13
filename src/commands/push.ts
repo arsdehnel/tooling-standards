@@ -1,14 +1,14 @@
-import { confirm } from '@inquirer/prompts';
-import chalk from 'chalk';
-import type { Argv } from 'yargs';
-import { fetchFile } from '../github/fetch.js';
-import { createBranch, createPullRequest, deleteBranch, findPRForBranch, updateFile } from '../github/push.js';
-import type { AdditionalFile } from '../handlers/base-handler.js';
-import { getHandler } from '../handlers/registry.js';
-import { generateDiff } from '../utils/diff.js';
-import { readTemplate } from '../utils/file-ops.js';
-import { compareJsonByProperty, formatJsonPropertyChange } from '../utils/json-diff.js';
-import { isJsonFile, normalizeJson } from '../utils/json-normalize.js';
+import { confirm } from "@inquirer/prompts";
+import chalk from "chalk";
+import type { Argv } from "yargs";
+import { fetchFile } from "../github/fetch.js";
+import { createBranch, createPullRequest, deleteBranch, findPRForBranch, updateFile } from "../github/push.js";
+import type { AdditionalFile } from "../handlers/base-handler.js";
+import { getHandler } from "../handlers/registry.js";
+import { formatDiff, generateDiff } from "../utils/diff.js";
+import { readTemplate } from "../utils/file-ops.js";
+import { compareJsonByProperty, formatJsonPropertyChange } from "../utils/json-diff.js";
+import { isJsonFile, normalizeJson } from "../utils/json-normalize.js";
 
 interface PushArgs {
 	file: string;
@@ -17,32 +17,32 @@ interface PushArgs {
 	branch?: string;
 }
 
-export const command = 'push <file>';
-export const desc = 'Push a template file to a GitHub repository via PR';
+export const command = "push <file>";
+export const desc = "Push a template file to a GitHub repository via PR";
 
 export const builder = (yargs: Argv): Argv<PushArgs> => {
 	return yargs
-		.positional('file', {
-			describe: 'Template file to push (relative to templates directory)',
-			type: 'string',
+		.positional("file", {
+			describe: "Template file to push (relative to templates directory)",
+			type: "string",
 			demandOption: true,
 		})
-		.option('owner', {
-			alias: 'o',
-			describe: 'GitHub repository owner/organization',
-			type: 'string',
+		.option("owner", {
+			alias: "o",
+			describe: "GitHub repository owner/organization",
+			type: "string",
 			demandOption: true,
 		})
-		.option('repo', {
-			alias: 'r',
-			describe: 'GitHub repository name',
-			type: 'string',
+		.option("repo", {
+			alias: "r",
+			describe: "GitHub repository name",
+			type: "string",
 			demandOption: true,
 		})
-		.option('branch', {
-			alias: 'b',
-			describe: 'Custom branch name (default: arsd-tooling-sync/<filename>)',
-			type: 'string',
+		.option("branch", {
+			alias: "b",
+			describe: "Custom branch name (default: arsd-tooling-sync/<filename>)",
+			type: "string",
 		}) as Argv<PushArgs>;
 };
 
@@ -59,7 +59,7 @@ export const handler = async (argv: PushArgs): Promise<void> => {
 
 	// Check if there's a custom handler for this file
 	const handler = getHandler(file);
-	const branchName = argv.branch || `arsd-tooling-sync/${file.replace(/\//g, '-')}`;
+	const branchName = argv.branch || `arsd-tooling-sync/${file.replace(/\//g, "-")}`;
 
 	let processedContent = templateContent;
 	let additionalFiles: AdditionalFile[] = [];
@@ -82,7 +82,7 @@ export const handler = async (argv: PushArgs): Promise<void> => {
 			for (const warning of warnings) {
 				console.log(chalk.yellow(`⚠️  ${warning}`));
 			}
-			console.log('');
+			console.log("");
 		}
 	} else {
 		// No handler - normalize if JSON
@@ -106,7 +106,7 @@ export const handler = async (argv: PushArgs): Promise<void> => {
 		remoteContent = fetched.content;
 		console.log(chalk.green(`✓ Found existing ${file} in ${owner}/${repo}\n`));
 	} catch (error) {
-		if (error instanceof Error && error.message.includes('File not found')) {
+		if (error instanceof Error && error.message.includes("File not found")) {
 			console.log(chalk.yellow(`⚠ File ${file} does not exist in ${owner}/${repo} (will create new file)\n`));
 		} else {
 			throw error;
@@ -156,7 +156,7 @@ export const handler = async (argv: PushArgs): Promise<void> => {
 
 			console.log(
 				chalk.bold(
-					`📋 Changes to ${chalk.cyan(fileToPush.path)}${fileToPush.reason ? chalk.dim(` (${fileToPush.reason})`) : ''}:\n`,
+					`📋 Changes to ${chalk.cyan(fileToPush.path)}${fileToPush.reason ? chalk.dim(` (${fileToPush.reason})`) : ""}:\n`,
 				),
 			);
 
@@ -165,15 +165,15 @@ export const handler = async (argv: PushArgs): Promise<void> => {
 				const changes = compareJsonByProperty(normalizedRemote, normalizedNew);
 				if (changes && changes.length > 0) {
 					for (const change of changes) {
-						console.log(formatJsonPropertyChange(change, 'push'));
-						console.log('');
+						console.log(formatJsonPropertyChange(change, "push"));
+						console.log("");
 					}
 				}
 			} else {
 				// Show traditional diff for non-JSON
-				const diff = generateDiff(normalizedRemote, normalizedNew, fileToPush.path);
-				console.log(diff);
-				console.log('');
+				const diff = generateDiff(normalizedRemote, normalizedNew, fileToPush.path, "existing (repo)", "new (template)");
+				console.log(formatDiff(diff));
+				console.log("");
 			}
 		} else {
 			hasChanges = true;
@@ -181,32 +181,32 @@ export const handler = async (argv: PushArgs): Promise<void> => {
 			// New file - show content preview
 			console.log(
 				chalk.bold(
-					`📄 New file ${chalk.cyan(fileToPush.path)}${fileToPush.reason ? chalk.dim(` (${fileToPush.reason})`) : ''}:\n`,
+					`📄 New file ${chalk.cyan(fileToPush.path)}${fileToPush.reason ? chalk.dim(` (${fileToPush.reason})`) : ""}:\n`,
 				),
 			);
-			const preview = fileToPush.content.split('\n').slice(0, 20).join('\n');
+			const preview = fileToPush.content.split("\n").slice(0, 20).join("\n");
 			console.log(chalk.dim(preview));
-			if (fileToPush.content.split('\n').length > 20) {
-				console.log(chalk.dim(`\n... (${fileToPush.content.split('\n').length - 20} more lines)`));
+			if (fileToPush.content.split("\n").length > 20) {
+				console.log(chalk.dim(`\n... (${fileToPush.content.split("\n").length - 20} more lines)`));
 			}
-			console.log('');
+			console.log("");
 		}
 	}
 
 	if (!hasChanges) {
-		console.log(chalk.green('✓ No changes detected - files are identical\n'));
+		console.log(chalk.green("✓ No changes detected - files are identical\n"));
 		return;
 	}
 
 	// Ask for confirmation
-	const fileList = filesToPush.map(f => f.path).join(', ');
+	const fileList = filesToPush.map(f => f.path).join(", ");
 	const shouldPush = await confirm({
 		message: `Push changes to ${fileList} in ${owner}/${repo}?`,
 		default: true,
 	});
 
 	if (!shouldPush) {
-		console.log(chalk.yellow('\n⏭ Push cancelled\n'));
+		console.log(chalk.yellow("\n⏭ Push cancelled\n"));
 		return;
 	}
 
@@ -218,7 +218,7 @@ export const handler = async (argv: PushArgs): Promise<void> => {
 	let existingPRUrl: string | undefined;
 
 	if (existingPR) {
-		if (existingPR.state === 'open') {
+		if (existingPR.state === "open") {
 			console.log(chalk.yellow(`⚠ Found open PR #${existingPR.number}, will update it\n`));
 			shouldCreatePR = false;
 			existingPRUrl = existingPR.url;
@@ -238,14 +238,14 @@ export const handler = async (argv: PushArgs): Promise<void> => {
 	}
 
 	// Create or update branch
-	if (shouldCreatePR || !existingPR || existingPR.state !== 'open') {
+	if (shouldCreatePR || !existingPR || existingPR.state !== "open") {
 		console.log(chalk.cyan(`🌿 Creating branch ${chalk.bold(branchName)}...`));
 
 		try {
 			await createBranch(owner, repo, branchName);
 			console.log(chalk.green(`✓ Branch created\n`));
 		} catch (error) {
-			if (error instanceof Error && error.message.includes('already exists')) {
+			if (error instanceof Error && error.message.includes("already exists")) {
 				// This shouldn't happen since we checked for PR and deleted if needed
 				// But just in case, delete and recreate
 				console.log(chalk.yellow(`⚠ Branch exists without PR, recreating...\n`));
@@ -277,7 +277,7 @@ export const handler = async (argv: PushArgs): Promise<void> => {
 		let prBody = `This PR updates configuration files from the tooling-standards repository.\n\n`;
 		prBody += `**Files changed:**\n`;
 		for (const fileToPush of filesToPush) {
-			prBody += `- \`${fileToPush.path}\`${fileToPush.reason ? ` - ${fileToPush.reason}` : ''}\n`;
+			prBody += `- \`${fileToPush.path}\`${fileToPush.reason ? ` - ${fileToPush.reason}` : ""}\n`;
 		}
 		prBody += `\n🤖 Generated by [tooling-standards](https://github.com/arsdehnel/tooling-standards)`;
 
@@ -285,13 +285,13 @@ export const handler = async (argv: PushArgs): Promise<void> => {
 		console.log(chalk.green(`✓ Pull request created!\n`));
 
 		console.log(chalk.bold.green(`\n✨ Success!\n`));
-		console.log(`${chalk.bold('PR:')} ${pr.url}`);
-		console.log(`${chalk.bold('Branch:')} ${branchName}`);
-		console.log(`${chalk.bold('Title:')} ${pr.title}\n`);
+		console.log(`${chalk.bold("PR:")} ${pr.url}`);
+		console.log(`${chalk.bold("Branch:")} ${branchName}`);
+		console.log(`${chalk.bold("Title:")} ${pr.title}\n`);
 	} else {
 		console.log(chalk.bold.green(`\n✨ Success!\n`));
-		console.log(`${chalk.bold('PR:')} ${existingPRUrl}`);
-		console.log(`${chalk.bold('Branch:')} ${branchName}`);
-		console.log(chalk.dim('(Existing PR updated with new commits)\n'));
+		console.log(`${chalk.bold("PR:")} ${existingPRUrl}`);
+		console.log(`${chalk.bold("Branch:")} ${branchName}`);
+		console.log(chalk.dim("(Existing PR updated with new commits)\n"));
 	}
 };

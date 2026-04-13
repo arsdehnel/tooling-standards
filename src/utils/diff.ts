@@ -1,5 +1,5 @@
-import chalk from 'chalk';
-import { applyPatch, createTwoFilesPatch, parsePatch } from 'diff';
+import chalk from "chalk";
+import { applyPatch, createTwoFilesPatch, parsePatch } from "diff";
 
 export interface Hunk {
 	index: number;
@@ -11,35 +11,32 @@ export interface Hunk {
 	newLines: number;
 }
 
-export function generateDiff(oldContent: string, newContent: string, filename: string): string {
-	const patch = createTwoFilesPatch(
-		`a/${filename}`,
-		`b/${filename}`,
-		oldContent,
-		newContent,
-		'Current template',
-		'Fetched from repo',
-	);
-
-	return patch;
+export function generateDiff(
+	oldContent: string,
+	newContent: string,
+	filename: string,
+	oldLabel = "current",
+	newLabel = "new",
+): string {
+	return createTwoFilesPatch(`a/${filename}`, `b/${filename}`, oldContent, newContent, oldLabel, newLabel);
 }
 
 export function formatDiff(diff: string): string {
-	const lines = diff.split('\n');
+	const lines = diff.split("\n");
 	return lines
 		.map(line => {
-			if (line.startsWith('+') && !line.startsWith('+++')) {
+			if (line.startsWith("+") && !line.startsWith("+++")) {
 				return chalk.green(line);
-			} else if (line.startsWith('-') && !line.startsWith('---')) {
+			} else if (line.startsWith("-") && !line.startsWith("---")) {
 				return chalk.red(line);
-			} else if (line.startsWith('@@')) {
+			} else if (line.startsWith("@@")) {
 				return chalk.cyan(line);
-			} else if (line.startsWith('+++') || line.startsWith('---')) {
+			} else if (line.startsWith("+++") || line.startsWith("---")) {
 				return chalk.bold(line);
 			}
 			return chalk.dim(line);
 		})
-		.join('\n');
+		.join("\n");
 }
 
 export function parseHunks(patchText: string): Hunk[] {
@@ -66,16 +63,16 @@ export function formatHunk(hunk: Hunk): string {
 	const lines: string[] = [chalk.cyan(hunk.header)];
 
 	for (const line of hunk.lines) {
-		if (line.startsWith('+')) {
+		if (line.startsWith("+")) {
 			lines.push(chalk.green(line));
-		} else if (line.startsWith('-')) {
+		} else if (line.startsWith("-")) {
 			lines.push(chalk.red(line));
 		} else {
 			lines.push(chalk.dim(line));
 		}
 	}
 
-	return lines.join('\n');
+	return lines.join("\n");
 }
 
 export function applySelectedHunks(oldContent: string, patchText: string, selectedIndexes: number[]): string {
@@ -101,13 +98,13 @@ export function applySelectedHunks(oldContent: string, patchText: string, select
 	const selectedPatch = `--- ${file.oldFileName}
 +++ ${file.newFileName}
 ${filteredFile.hunks
-	.map(hunk => `@@ -${hunk.oldStart},${hunk.oldLines} +${hunk.newStart},${hunk.newLines} @@\n${hunk.lines.join('\n')}`)
-	.join('\n')}`;
+	.map(hunk => `@@ -${hunk.oldStart},${hunk.oldLines} +${hunk.newStart},${hunk.newLines} @@\n${hunk.lines.join("\n")}`)
+	.join("\n")}`;
 
 	const result = applyPatch(oldContent, selectedPatch);
 
 	if (result === false) {
-		throw new Error('Failed to apply selected changes');
+		throw new Error("Failed to apply selected changes");
 	}
 
 	return result;

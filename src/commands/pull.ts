@@ -1,14 +1,14 @@
-import { confirm, select } from '@inquirer/prompts';
-import chalk from 'chalk';
-import type { Argv } from 'yargs';
-import { fetchFile } from '../github/fetch.js';
-import { applySelectedHunks, formatDiff, formatHunk, generateDiff, parseHunks } from '../utils/diff.js';
-import { readTemplate, saveTemplate, templateExists } from '../utils/file-ops.js';
-import { applyJsonPropertyChanges, compareJsonByProperty, formatJsonPropertyChange } from '../utils/json-diff.js';
-import { isJsonFile, normalizeJson } from '../utils/json-normalize.js';
+import { confirm, select } from "@inquirer/prompts";
+import chalk from "chalk";
+import type { Argv } from "yargs";
+import { fetchFile } from "../github/fetch.js";
+import { applySelectedHunks, formatDiff, formatHunk, generateDiff, parseHunks } from "../utils/diff.js";
+import { readTemplate, saveTemplate, templateExists } from "../utils/file-ops.js";
+import { applyJsonPropertyChanges, compareJsonByProperty, formatJsonPropertyChange } from "../utils/json-diff.js";
+import { isJsonFile, normalizeJson } from "../utils/json-normalize.js";
 
-export const command = 'pull <file>';
-export const describe = 'Pull a config file from a GitHub repository';
+export const command = "pull <file>";
+export const describe = "Pull a config file from a GitHub repository";
 
 interface PullArgs {
 	file: string;
@@ -20,32 +20,32 @@ interface PullArgs {
 
 export const builder = (yargs: Argv) => {
 	return yargs
-		.positional('file', {
-			describe: 'Config file to pull (e.g., biome.json, tsconfig.json)',
-			type: 'string',
+		.positional("file", {
+			describe: "Config file to pull (e.g., biome.json, tsconfig.json)",
+			type: "string",
 		})
-		.option('owner', {
-			alias: 'o',
-			describe: 'GitHub repository owner',
-			type: 'string',
+		.option("owner", {
+			alias: "o",
+			describe: "GitHub repository owner",
+			type: "string",
 			demandOption: true,
 		})
-		.option('repo', {
-			alias: 'r',
-			describe: 'GitHub repository name',
-			type: 'string',
+		.option("repo", {
+			alias: "r",
+			describe: "GitHub repository name",
+			type: "string",
 			demandOption: true,
 		})
-		.option('branch', {
-			alias: 'b',
-			describe: 'Branch or ref to pull from',
-			type: 'string',
-			default: 'main',
+		.option("branch", {
+			alias: "b",
+			describe: "Branch or ref to pull from",
+			type: "string",
+			default: "main",
 		})
-		.option('save', {
-			alias: 's',
-			describe: 'Automatically save without prompting',
-			type: 'boolean',
+		.option("save", {
+			alias: "s",
+			describe: "Automatically save without prompting",
+			type: "boolean",
 			default: false,
 		});
 };
@@ -82,7 +82,7 @@ export const handler = async (argv: PullArgs): Promise<void> => {
 			}
 
 			if (currentContent === newContent) {
-				console.log(chalk.green('✨ No changes - template is already up to date'));
+				console.log(chalk.green("✨ No changes - template is already up to date"));
 				return;
 			}
 
@@ -91,19 +91,19 @@ export const handler = async (argv: PullArgs): Promise<void> => {
 				const propertyChanges = compareJsonByProperty(currentContent, newContent);
 
 				if (!propertyChanges || propertyChanges.length === 0) {
-					console.log(chalk.green('✨ No changes - template is already up to date'));
+					console.log(chalk.green("✨ No changes - template is already up to date"));
 					return;
 				}
 
 				console.log(
-					chalk.yellow(`📝 Found ${propertyChanges.length} property change${propertyChanges.length > 1 ? 's' : ''}:\n`),
+					chalk.yellow(`📝 Found ${propertyChanges.length} property change${propertyChanges.length > 1 ? "s" : ""}:\n`),
 				);
 
 				if (save) {
 					// Auto-save: accept all changes
 					for (const change of propertyChanges) {
-						console.log(formatJsonPropertyChange(change, 'pull'));
-						console.log('');
+						console.log(formatJsonPropertyChange(change, "pull"));
+						console.log("");
 					}
 					contentToSave = newContent;
 				} else {
@@ -113,28 +113,28 @@ export const handler = async (argv: PullArgs): Promise<void> => {
 					for (let i = 0; i < propertyChanges.length; i++) {
 						const change = propertyChanges[i];
 						console.log(chalk.bold(`\n--- Property ${i + 1} of ${propertyChanges.length} ---`));
-						console.log(formatJsonPropertyChange(change, 'pull'));
-						console.log('');
+						console.log(formatJsonPropertyChange(change, "pull"));
+						console.log("");
 
 						const action = await select({
-							message: 'What would you like to do?',
+							message: "What would you like to do?",
 							choices: [
-								{ name: '⊗ Keep template (skip this change)', value: 'no' },
-								{ name: '✓ Use fetched value (accept this change)', value: 'yes' },
-								{ name: '⊗⊗ Keep template for all remaining', value: 'none' },
-								{ name: '✓✓ Use fetched for all remaining', value: 'all' },
+								{ name: "⊗ Keep template (skip this change)", value: "no" },
+								{ name: "✓ Use fetched value (accept this change)", value: "yes" },
+								{ name: "⊗⊗ Keep template for all remaining", value: "none" },
+								{ name: "✓✓ Use fetched for all remaining", value: "all" },
 							],
 						});
 
-						if (action === 'yes') {
+						if (action === "yes") {
 							selectedChanges.push(change);
-						} else if (action === 'all') {
+						} else if (action === "all") {
 							// Accept this one and all remaining
 							for (let j = i; j < propertyChanges.length; j++) {
 								selectedChanges.push(propertyChanges[j]);
 							}
 							break;
-						} else if (action === 'none') {
+						} else if (action === "none") {
 							// Skip all remaining
 							break;
 						}
@@ -142,33 +142,33 @@ export const handler = async (argv: PullArgs): Promise<void> => {
 					}
 
 					if (selectedChanges.length === 0) {
-						console.log(chalk.dim('\n⏭️  No changes accepted'));
+						console.log(chalk.dim("\n⏭️  No changes accepted"));
 						return;
 					}
 
 					console.log(
 						chalk.green(
-							`\n✓ Applying ${selectedChanges.length} of ${propertyChanges.length} change${propertyChanges.length > 1 ? 's' : ''}`,
+							`\n✓ Applying ${selectedChanges.length} of ${propertyChanges.length} change${propertyChanges.length > 1 ? "s" : ""}`,
 						),
 					);
 					contentToSave = applyJsonPropertyChanges(currentContent, selectedChanges);
 				}
 			} else {
 				// For non-JSON files, use traditional diff hunks
-				const diff = generateDiff(currentContent, newContent, file);
+				const diff = generateDiff(currentContent, newContent, file, "template", "fetched from repo");
 				const hunks = parseHunks(diff);
 
 				if (hunks.length === 0) {
-					console.log(chalk.green('✨ No changes - template is already up to date'));
+					console.log(chalk.green("✨ No changes - template is already up to date"));
 					return;
 				}
 
-				console.log(chalk.yellow(`📝 Found ${hunks.length} change${hunks.length > 1 ? 's' : ''}:\n`));
+				console.log(chalk.yellow(`📝 Found ${hunks.length} change${hunks.length > 1 ? "s" : ""}:\n`));
 
 				if (save) {
 					// Auto-save: accept all changes
 					console.log(formatDiff(diff));
-					console.log('');
+					console.log("");
 					contentToSave = newContent;
 				} else {
 					// Interactive hunk approval
@@ -177,28 +177,29 @@ export const handler = async (argv: PullArgs): Promise<void> => {
 					for (let i = 0; i < hunks.length; i++) {
 						const hunk = hunks[i];
 						console.log(chalk.bold(`\n--- Change ${i + 1} of ${hunks.length} ---`));
+						console.log(chalk.dim("  (-) template  (+) fetched from repo"));
 						console.log(formatHunk(hunk));
-						console.log('');
+						console.log("");
 
 						const action = await select({
-							message: 'What would you like to do?',
+							message: "What would you like to do?",
 							choices: [
-								{ name: '⊗ Keep template (skip this change)', value: 'no' },
-								{ name: '✓ Use fetched value (accept this change)', value: 'yes' },
-								{ name: '⊗⊗ Keep template for all remaining', value: 'none' },
-								{ name: '✓✓ Use fetched for all remaining', value: 'all' },
+								{ name: "⊗ Keep template (skip this change)", value: "no" },
+								{ name: "✓ Use fetched value (accept this change)", value: "yes" },
+								{ name: "⊗⊗ Keep template for all remaining", value: "none" },
+								{ name: "✓✓ Use fetched for all remaining", value: "all" },
 							],
 						});
 
-						if (action === 'yes') {
+						if (action === "yes") {
 							selectedIndexes.push(i);
-						} else if (action === 'all') {
+						} else if (action === "all") {
 							// Accept this one and all remaining
 							for (let j = i; j < hunks.length; j++) {
 								selectedIndexes.push(j);
 							}
 							break;
-						} else if (action === 'none') {
+						} else if (action === "none") {
 							// Skip all remaining
 							break;
 						}
@@ -206,20 +207,20 @@ export const handler = async (argv: PullArgs): Promise<void> => {
 					}
 
 					if (selectedIndexes.length === 0) {
-						console.log(chalk.dim('\n⏭️  No changes accepted'));
+						console.log(chalk.dim("\n⏭️  No changes accepted"));
 						return;
 					}
 
 					console.log(
 						chalk.green(
-							`\n✓ Applying ${selectedIndexes.length} of ${hunks.length} change${hunks.length > 1 ? 's' : ''}`,
+							`\n✓ Applying ${selectedIndexes.length} of ${hunks.length} change${hunks.length > 1 ? "s" : ""}`,
 						),
 					);
 					contentToSave = applySelectedHunks(currentContent, diff, selectedIndexes);
 				}
 			}
 		} else {
-			console.log(chalk.blue('ℹ️  Template does not exist yet.\n'));
+			console.log(chalk.blue("ℹ️  Template does not exist yet.\n"));
 
 			// Normalize JSON files
 			if (isJsonFile(file)) {
@@ -228,12 +229,12 @@ export const handler = async (argv: PullArgs): Promise<void> => {
 
 			if (!save) {
 				const shouldCreate = await confirm({
-					message: 'Create this template?',
+					message: "Create this template?",
 					default: true,
 				});
 
 				if (!shouldCreate) {
-					console.log(chalk.dim('⏭️  Skipped creation'));
+					console.log(chalk.dim("⏭️  Skipped creation"));
 					return;
 				}
 			}
@@ -242,18 +243,18 @@ export const handler = async (argv: PullArgs): Promise<void> => {
 		const savedPath = await saveTemplate(file, contentToSave);
 		console.log(chalk.green(`💾 Saved to ${chalk.bold(savedPath)}`));
 	} catch (error) {
-		if (error instanceof Error && error.message.includes('Repository not found')) {
+		if (error instanceof Error && error.message.includes("Repository not found")) {
 			console.error(chalk.red(`\n❌ Repository ${chalk.bold(`${owner}/${repo}`)} not found`));
-			console.log(chalk.dim('\n💡 Check that:'));
-			console.log(chalk.dim('   - The repository name is spelled correctly'));
-			console.log(chalk.dim('   - You have access to this repository'));
-			console.log(chalk.dim('   - Your GitHub token has the correct permissions'));
+			console.log(chalk.dim("\n💡 Check that:"));
+			console.log(chalk.dim("   - The repository name is spelled correctly"));
+			console.log(chalk.dim("   - You have access to this repository"));
+			console.log(chalk.dim("   - Your GitHub token has the correct permissions"));
 			process.exit(1);
 		}
 
-		if (error instanceof Error && error.message.includes('File not found')) {
+		if (error instanceof Error && error.message.includes("File not found")) {
 			console.error(chalk.red(`\n❌ ${chalk.bold(file)} does not exist in ${chalk.bold(`${owner}/${repo}`)}`));
-			console.log(chalk.dim('\n💡 This file is not in the target repository.'));
+			console.log(chalk.dim("\n💡 This file is not in the target repository."));
 			console.log(
 				chalk.dim(`   To add your standard config to this repo, try: tooling push ${file} -o ${owner} -r ${repo}`),
 			);
