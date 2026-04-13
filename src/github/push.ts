@@ -1,4 +1,27 @@
-import { Octokit } from '@octokit/rest';
+import { Octokit } from "@octokit/rest";
+
+interface GitHubErrorDetail {
+	message?: string;
+	resource?: string;
+	code?: string;
+	field?: string;
+}
+
+/**
+ * Extract a human-readable message from an Octokit error, including any
+ * validation details from the response body's `errors` array.
+ */
+function githubErrorMessage(error: unknown): string {
+	const e = error as {
+		message?: string;
+		response?: { data?: { message?: string; errors?: GitHubErrorDetail[] } };
+	};
+	const base = e.response?.data?.message || e.message || "Unknown GitHub error";
+	const details = e.response?.data?.errors
+		?.map(err => err.message || [err.resource, err.field, err.code].filter(Boolean).join("/"))
+		.filter(Boolean);
+	return details?.length ? `${base}: ${details.join("; ")}` : base;
+}
 
 export interface CreateBranchResult {
 	branchName: string;
@@ -21,7 +44,7 @@ export interface CreatePRResult {
 export interface ExistingPR {
 	number: number;
 	url: string;
-	state: 'open' | 'closed';
+	state: "open" | "closed";
 	merged: boolean;
 }
 
@@ -31,7 +54,7 @@ export interface ExistingPR {
 export async function createBranch(owner: string, repo: string, branchName: string): Promise<CreateBranchResult> {
 	const octokit = new Octokit({
 		auth: process.env.GH_TOKEN_TOOLING_STANDARDS,
-		baseUrl: 'https://api.github.com',
+		baseUrl: "https://api.github.com",
 	});
 
 	// Get the default branch
@@ -56,8 +79,12 @@ export async function createBranch(owner: string, repo: string, branchName: stri
 			sha,
 		});
 	} catch (error) {
-		if ((error as { status?: number }).status === 422) {
-			throw new Error(`Branch ${branchName} already exists`);
+		const e = error as { status?: number; response?: { data?: { message?: string } } };
+		if (e.status === 422) {
+			if (e.response?.data?.message === "Reference already exists") {
+				throw new Error(`Branch ${branchName} already exists`);
+			}
+			throw new Error(githubErrorMessage(error));
 		}
 		throw error;
 	}
@@ -78,7 +105,7 @@ export async function updateFile(
 ): Promise<UpdateFileResult> {
 	const octokit = new Octokit({
 		auth: process.env.GH_TOKEN_TOOLING_STANDARDS,
-		baseUrl: 'https://api.github.com',
+		baseUrl: "https://api.github.com",
 	});
 
 	// Check if file exists to get its SHA (needed for updates)
@@ -91,7 +118,7 @@ export async function updateFile(
 			ref: branch,
 		});
 
-		if ('sha' in data && data.type === 'file') {
+		if ("sha" in data && data.type === "file") {
 			fileSha = data.sha;
 		}
 	} catch (error) {
@@ -107,15 +134,15 @@ export async function updateFile(
 		repo,
 		path,
 		message,
-		content: Buffer.from(content).toString('base64'),
+		content: Buffer.from(content).toString("base64"),
 		branch,
 		...(fileSha && { sha: fileSha }),
 	});
 
 	return {
 		commit: {
-			sha: data.commit.sha || '',
-			message: data.commit.message || '',
+			sha: data.commit.sha || "",
+			message: data.commit.message || "",
 		},
 	};
 }
@@ -126,7 +153,7 @@ export async function updateFile(
 export async function findPRForBranch(owner: string, repo: string, branchName: string): Promise<ExistingPR | null> {
 	const octokit = new Octokit({
 		auth: process.env.GH_TOKEN_TOOLING_STANDARDS,
-		baseUrl: 'https://api.github.com',
+		baseUrl: "https://api.github.com",
 	});
 
 	// Search for PRs with this head branch (both open and closed)
@@ -134,10 +161,10 @@ export async function findPRForBranch(owner: string, repo: string, branchName: s
 		owner,
 		repo,
 		head: `${owner}:${branchName}`,
-		state: 'all',
+		state: "all",
 		per_page: 1,
-		sort: 'created',
-		direction: 'desc',
+		sort: "created",
+		direction: "desc",
 	});
 
 	if (data.length === 0) {
@@ -148,7 +175,7 @@ export async function findPRForBranch(owner: string, repo: string, branchName: s
 	return {
 		number: pr.number,
 		url: pr.html_url,
-		state: pr.state as 'open' | 'closed',
+		state: pr.state as "open" | "closed",
 		merged: pr.merged_at !== null,
 	};
 }
@@ -159,14 +186,18 @@ export async function findPRForBranch(owner: string, repo: string, branchName: s
 export async function deleteBranch(owner: string, repo: string, branchName: string): Promise<void> {
 	const octokit = new Octokit({
 		auth: process.env.GH_TOKEN_TOOLING_STANDARDS,
-		baseUrl: 'https://api.github.com',
+		baseUrl: "https://api.github.com",
 	});
 
-	await octokit.rest.git.deleteRef({
-		owner,
-		repo,
-		ref: `heads/${branchName}`,
-	});
+	try {
+		await octokit.rest.git.deleteRef({
+			owner,
+			repo,
+			ref: `heads/${branchName}`,
+		});
+	} catch (error) {
+		throw new Error(githubErrorMessage(error));
+	}
 }
 
 /**
@@ -181,7 +212,7 @@ export async function createPullRequest(
 ): Promise<CreatePRResult> {
 	const octokit = new Octokit({
 		auth: process.env.GH_TOKEN_TOOLING_STANDARDS,
-		baseUrl: 'https://api.github.com',
+		baseUrl: "https://api.github.com",
 	});
 
 	// Get the default branch
