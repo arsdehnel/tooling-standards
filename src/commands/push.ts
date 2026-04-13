@@ -59,7 +59,7 @@ export const handler = async (argv: PushArgs): Promise<void> => {
 
 	// Check if there's a custom handler for this file
 	const handler = getHandler(file);
-	const branchName = argv.branch || `arsd-tooling-sync/${file.replace(/\//g, "-")}`;
+	const branchName = argv.branch || `arsd-tooling-sync/${file.replace(/\//g, "-").replace(/^\./, "")}`;
 
 	let processedContent = templateContent;
 	let additionalFiles: AdditionalFile[] = [];
